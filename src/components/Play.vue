@@ -16,11 +16,18 @@
         <button :disabled="isMatchFinished" @click="chooseMove('P')">P</button>
         <button :disabled="isMatchFinished" @click="chooseMove('R')">R</button>
         <button :disabled="isMatchFinished" @click="chooseMove('X')">X</button>
-        <p v-if="isMatchFinished">Match finished.</p>
+        <p v-if="isMatchFinished">Match finished. <router-link to="/ranks"> Back</router-link></p>
     </div>
 </template>
 
 <script>
+
+const MOVES_DAMAGE_TABLE = {
+    'P': ['R', 'X'],
+    'R': ['X', 'P'],
+    'X': ['P', 'R']
+}
+
 export default {
     data() {
         return { 
@@ -42,6 +49,9 @@ export default {
         }, 
         opponent() {
             return this.$store.getters.players.filter(item => item.name == this.opponentUsername)[0];
+        },
+        player() {
+            return this.$store.getters.players.filter(item => item.name == this.username)[0];
         }
     },
     created() {
@@ -61,10 +71,10 @@ export default {
                     this.$router.push('/ranks');
                     break;
                 case 'ia-god':
-                    aiMove = 'W';
+                    aiMove = MOVES_DAMAGE_TABLE[symbol][1];
                     break;
                 case 'ia-anti-god':
-                    aiMove = 'L';
+                    aiMove = MOVES_DAMAGE_TABLE[symbol][0];
                     break;
                 case 'ia-prob':
                     var probSum = this.opponent.probs['P'] + this.opponent.probs['R'] + this.opponent.probs['X'];
@@ -84,9 +94,25 @@ export default {
             if (symbol == aiMove) {
                 this.player1Points += 0.5;
                 this.player2Points += 0.5;
+            } else if (MOVES_DAMAGE_TABLE[symbol][0] == aiMove) {
+                this.player1Points += 1;
+                this.player2Points += 0;
+            } else {
+                this.player1Points += 0;
+                this.player2Points += 1;
             }
 
-            
+            this.moves.push({ id: ++this.lastID, user1: symbol, user2: aiMove});
+            if ((this.moves.length >= 5 && this.player1Points != this.player2Points) || this.moves.length >= 10) {
+                this.isMatchFinished = true;
+                if (this.player1Points > this.player2Points) {
+                    this.$store.commit('updateElo', { "name": this.username, "elo": this.player.elo+100*this.player1Points/(this.player1Points+this.player2Points) });
+                    this.$store.commit('updateElo', { "name": this.opponentUsername, "elo": this.opponent.elo-100*this.player1Points/(this.player1Points+this.player2Points) });
+                } else if (this.player1Points < this.player2Points) {
+                    this.$store.commit('updateElo', { "name": this.username, "elo": this.player.elo-100*this.player2Points/(this.player1Points+this.player2Points) });
+                    this.$store.commit('updateElo', { "name": this.opponentUsername, "elo": this.opponent.elo+100*this.player2Points/(this.player1Points+this.player2Points) });
+                }
+            }
         }
     }
 }
@@ -95,10 +121,10 @@ export default {
     .round-table {
         border: 1px solid black;
     }
-    tr  {
+    .round-table tr td  {
         border: 1px solid black;
     }
-    td  {
+    .round-table tr th  {
         border: 1px solid black;
     }
 </style>

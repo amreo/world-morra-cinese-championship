@@ -18,15 +18,18 @@ export default new Vuex.Store({
         initRanks(state) {
             state.players.push({
                 'name': state.username,
-                'type': 'user'
+                'type': 'user',
+                'elo': 1500
             });
             state.players.push({
                 'name': 'god',
-                'type': 'ia-god'
+                'type': 'ia-god',
+                'elo': 9999
             });
             state.players.push({
                 'name': 'antigod',
-                'type': 'ia-anti-god'
+                'type': 'ia-anti-god',
+                'elo': 0
             });
             
             let number = (Math.random()*20) | 0+10;
@@ -36,12 +39,16 @@ export default new Vuex.Store({
                     'name': 'probot-' + i,
                     'type': 'ia-prob' ,
                     'probs': {
-                        'P': Math.random(),
-                        'R': Math.random(),
-                        'S': Math.random()
-                    }
+                        'P': 0.5+Math.random(),
+                        'R': 0.5+Math.random(),
+                        'X': 0.5+Math.random()
+                    },
+                    'elo': 1500
                 });
             }
+        },
+        updateElo(state, newELOInfo) {
+            state.players.filter(item => item.name == newELOInfo["name"])[0].elo = newELOInfo["elo"];
         }
     },
     getters: {
